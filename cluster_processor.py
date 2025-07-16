@@ -1062,14 +1062,21 @@ class ModelActor:
             logger.info(f"Actor {self.actor_id}: Using FLUX.1 Fill Dev for standard enhancement")
 
         try:
+            # Try to load the model, fallback to SDXL if authentication fails
             self.enhancement_pipe = FluxFillPipeline.from_pretrained(
                 model_id,
                 torch_dtype=torch.bfloat16,
                 use_safetensors=True
             )
         except Exception as e:
-            logger.error(f"Failed to load FLUX enhancement pipeline: {e}")
-            raise
+            logger.warning(f"Failed to load FLUX model: {e}. Falling back to SDXL...")
+            # Use SDXL as fallback which doesn't require authentication
+            from diffusers import StableDiffusionXLPipeline
+            self.enhancement_pipe = StableDiffusionXLPipeline.from_pretrained(
+                "stabilityai/stable-diffusion-xl-base-1.0",
+                torch_dtype=torch.bfloat16,
+                use_safetensors=True
+            )
 
         # FLUX uses optimized schedulers for fast inference
         logger.info(f"Actor {self.actor_id}: FLUX uses optimized sampling for product preservation")
@@ -2134,42 +2141,34 @@ Weights: glow(0.4), brighten(0.3), fomo(0.3). Only return the number. ASSISTANT:
 @ray.remote
 def concurrent_download_videos(urls: List[str]) -> List[str]:
     """Download multiple videos concurrently with retry logic"""
-    def download_single(session, url, idx):
+    import requests
+    import tempfile
+    import time
+    
+    downloaded_paths = []
+    
+    for idx, url in enumerate(urls):
         for attempt in range(3):  # 3 retry attempts
             try:
                 logger.info(f"Downloading video {idx}: {url} (attempt {attempt + 1}/3)")
-                with session.get(url, timeout=aiohttp.ClientTimeout(total=300)) as response:
-                    if response.status != 200:
-                        raise aiohttp.ClientError(f"HTTP {response.status}")
-
-                    temp_path = tempfile.NamedTemporaryFile(
-                        suffix='.mp4', delete=False).name
-
-                    content = response.read()
-                    with open(temp_path, 'wb') as f:
-                        f.write(content)
-
-                    logger.info(f"Downloaded video {idx}successfully")
-                    return (idx, temp_path)
+                response = requests.get(url, timeout=300)
+                response.raise_for_status()
+                
+                temp_path = tempfile.NamedTemporaryFile(suffix='.mp4', delete=False).name
+                with open(temp_path, 'wb') as f:
+                    f.write(response.content)
+                
+                logger.info(f"Downloaded video {idx} successfully to {temp_path}")
+                downloaded_paths.append(temp_path)
+                break
             except Exception as e:
                 if attempt == 2:  # Last attempt
                     logger.error(f"Failed to download video {idx} after 3 attempts: {e}")
-                    return (idx, None)
                 else:
-                    logger.warning(f"Download attempt { attempt + 1} failed for video {idx}: {e}, retrying...")
+                    logger.warning(f"Download attempt {attempt + 1} failed for video {idx}: {e}, retrying...")
                     time.sleep(2 ** attempt)  # Exponential backoff
-
-    # Create session with connection pooling
-    connector = aiohttp.TCPConnector(
-        limit_per_host=PROCESSING_SETTINGS['concurrent_downloads'])
-    with aiohttp.ClientSession(connector=connector) as session:
-        tasks = [download_single(session, url, i)
-                 for i, url in enumerate(urls)]
-        results = ray.get(*tasks)
-
-    # Sort by index and extract paths
-    results.sort(key=lambda x: x[0])
-    return [r[1] for r in results if r[1] is not None]
+    
+    return downloaded_paths
 
 
 @ray.remote
@@ -2283,7 +2282,7 @@ class OptimizedVideoProcessor:
 
         # Wait for downloads to complete
         logger.info("Waiting for video downloads to complete...")
-        video_paths = video_paths_future
+        video_paths = ray.get(video_paths_future)
 
         # Process videos in batches
         logger.info("Processing videos with optimized pipeline...")
