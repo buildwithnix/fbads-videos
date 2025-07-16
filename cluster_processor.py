@@ -1734,7 +1734,7 @@ class ModelActor:
     # OPTIMIZATION 3: Quantum Circuit Caching
     # ========================================================================
 
-    @lru_cache(maxsize=1000)
+    # Removed @lru_cache to fix Ray pickling issue
     def _get_cached_quantum_circuit(self, seed: int) -> float:
         """Get cached quantum circuit result"""
         random.seed(seed)
