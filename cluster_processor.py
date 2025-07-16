@@ -78,7 +78,7 @@ logger.addHandler(handler)
 # Load configuration
 CONFIG_PATH = "config.json"
 if not os.path.exists(CONFIG_PATH):
-    logger.error(f"Configuration file {CONFIG_PATH} not found!")
+    logger.error(f"Configuration file {CONFIG_PATH}not found!")
     sys.exit(1)
 
 with open(CONFIG_PATH, 'r') as f:
@@ -705,8 +705,7 @@ class ProductTracker:
             self.sv = sv  # Store supervision module
             logger.info("SAM2 product tracking initialized successfully")
         except Exception as e:
-            logger.warning(
-                f"SAM2 not available, using fallback detection: {e}")
+            logger.warning(f"SAM2 not available, using fallback detection: {e}")
             self.tracking_enabled = False
 
     def track_product_in_frames(self,
@@ -1007,8 +1006,7 @@ class ModelActor:
             else:
                 raise RuntimeError("CUDA not available")
         except Exception as e:
-            logger.warning(
-                f"ModelActor {actor_id}: GPU initialization failed ({e}), falling back to CPU")
+            logger.warning(f"ModelActor {actor_id}: GPU initialization failed ({e}), falling back to CPU")
             self.device = torch.device("cpu")
 
         logger.info(f"ModelActor {actor_id} initializing on {self.device}")
@@ -1028,7 +1026,7 @@ class ModelActor:
         self.frame_cache = {}
         self.feature_cache = {}
 
-        logger.info(f"ModelActor {actor_id} ready!")
+        logger.info(f"ModelActor {actor_id}ready!")
 
     def _load_optimized_models(self):
         """Load models with 8-bit quantization and TensorRT optimization"""
@@ -1047,8 +1045,7 @@ class ModelActor:
                 "8-bit quantization requested but BitsAndBytes not available")
 
         # Load FLUX Fill Pipeline for product-preserving enhancement
-        logger.info(
-            f"Actor { self.actor_id}: Loading FLUX Fill pipeline for image-to-image enhancement...")
+        logger.info(f"Actor {self.actor_id}: Loading FLUX Fill pipeline for image-to-image enhancement...")
 
         # Determine which FLUX model to use
         use_schnell = OPTIMIZATION_SETTINGS.get('use_flux_schnell', False)
@@ -1056,16 +1053,13 @@ class ModelActor:
 
         if use_kontext:
             model_id = "black-forest-labs/FLUX.1-Kontext-dev"
-            logger.info(
-                f"Actor { self.actor_id}: Using FLUX.1 Kontext for context-aware enhancement (VIREX-9000 mode)")
+            logger.info(f"Actor {self.actor_id}: Using FLUX.1 Kontext for context-aware enhancement (VIREX-9000 mode)")
         elif use_schnell:
             model_id = "black-forest-labs/FLUX.1-schnell"
-            logger.info(
-                f"Actor { self.actor_id}: Using FLUX.1 Schnell for 4x faster processing")
+            logger.info(f"Actor {self.actor_id}: Using FLUX.1 Schnell for 4x faster processing")
         else:
             model_id = "black-forest-labs/FLUX.1-Fill-dev"
-            logger.info(
-                f"Actor { self.actor_id}: Using FLUX.1 Fill Dev for standard enhancement")
+            logger.info(f"Actor {self.actor_id}: Using FLUX.1 Fill Dev for standard enhancement")
 
         try:
             self.enhancement_pipe = FluxFillPipeline.from_pretrained(
@@ -1078,16 +1072,14 @@ class ModelActor:
             raise
 
         # FLUX uses optimized schedulers for fast inference
-        logger.info(
-            f"Actor { self.actor_id}: FLUX uses optimized sampling for product preservation")
+        logger.info(f"Actor {self.actor_id}: FLUX uses optimized sampling for product preservation")
 
         # Apply TensorRT optimization if available
         if OPTIMIZATION_SETTINGS['use_tensorrt'] and self.device.type == "cuda" and TENSORRT_AVAILABLE:
             try:
                 self._optimize_with_tensorrt(self.enhancement_pipe)
             except Exception as e:
-                logger.warning(
-                    f"TensorRT optimization failed: {e}, using standard pipeline")
+                logger.warning(f"TensorRT optimization failed: {e}, using standard pipeline")
         elif OPTIMIZATION_SETTINGS['use_tensorrt'] and not TENSORRT_AVAILABLE:
             logger.warning(
                 "TensorRT optimization requested but TensorRT not available")
@@ -1098,12 +1090,10 @@ class ModelActor:
         # slicing
         try:
             self.enhancement_pipe.enable_xformers_memory_efficient_attention()
-            logger.info(
-                f"Actor { self.actor_id}: Using xformers for attention optimization")
+            logger.info(f"Actor {self.actor_id}: Using xformers for attention optimization")
         except Exception:
             self.enhancement_pipe.enable_attention_slicing()  # Fallback to attention slicing
-            logger.info(
-                f"Actor { self.actor_id}: Using attention slicing (xformers not available)")
+            logger.info(f"Actor {self.actor_id}: Using attention slicing (xformers not available)")
 
         self.enhancement_pipe.enable_vae_slicing()       # VAE slicing for large batches
 
@@ -1112,16 +1102,13 @@ class ModelActor:
             try:
                 self.enhancement_pipe.transformer = torch.compile(
                     self.enhancement_pipe.transformer)
-                logger.info(
-                    f"Actor { self.actor_id}: Applied torch.compile to FLUX transformer for ~20% speedup")
+                logger.info(f"Actor {self.actor_id}: Applied torch.compile to FLUX transformer for ~20% speedup")
             except Exception as e:
-                logger.warning(
-                    f"Actor { self.actor_id}: torch.compile failed: {e}")
+                logger.warning(f"Actor {self.actor_id}: torch.compile failed: {e}")
 
         # Also load SVD for optional video generation effects
         if OPTIMIZATION_SETTINGS.get('use_svd_effects', False):
-            logger.info(
-                f"Actor { self.actor_id}: Loading SVD for video effects...")
+            logger.info(f"Actor {self.actor_id}: Loading SVD for video effects...")
             try:
                 self.svd_pipe = StableVideoDiffusionPipeline.from_pretrained(
                     "stabilityai/stable-video-diffusion-img2vid-xt",
@@ -1142,13 +1129,11 @@ class ModelActor:
 
         # FLUX Fill handles both enhancement and inpainting, no need for
         # separate pipeline
-        logger.info(
-            f"Actor { self.actor_id}: FLUX Fill pipeline handles both enhancement and inpainting")
+        logger.info(f"Actor {self.actor_id}: FLUX Fill pipeline handles both enhancement and inpainting")
         self.inpaint_pipe = self.enhancement_pipe  # Use same pipeline for consistency
 
         # Load SigLIP with optimization - superior to CLIP for scene engagement
-        logger.info(
-            f"Actor { self.actor_id}: Loading SigLIP model (better than CLIP for viral content)...")
+        logger.info(f"Actor {self.actor_id}: Loading SigLIP model (better than CLIP for viral content)...")
         self.siglip_model = AutoModel.from_pretrained(
             "google/siglip-large-patch16-384",
             torch_dtype=torch.bfloat16
@@ -1157,8 +1142,7 @@ class ModelActor:
             "google/siglip-large-patch16-384")
 
         # Load Video scoring model with 8-bit quantization
-        logger.info(
-            f"Actor { self.actor_id}: Loading VideoLLaVA with 8-bit quantization...")
+        logger.info(f"Actor {self.actor_id}: Loading VideoLLaVA with 8-bit quantization...")
         try:
             self.virality_model = VideoLlavaForConditionalGeneration.from_pretrained(
                 "LanguageBind/Video-LLaVA-7B-hf",
@@ -1174,9 +1158,7 @@ class ModelActor:
         self.ocr_reader = paddleocr.PaddleOCR(
             use_angle_cls=True,
             lang='en', use_gpu=True if self.device.type == "cuda" else False,
-            device=f'gpu:{
-                self.actor_id %
-                torch.cuda.device_count()}' if self.device.type == "cuda" else 'cpu')
+            device=f'gpu:{self.actor_id % torch.cuda.device_count()}' if self.device.type == "cuda" else 'cpu')
 
         # Quantum device
         self.qml_dev = qml.device(
@@ -1196,11 +1178,9 @@ class ModelActor:
                 True):
             try:
                 self.product_tracker = ProductTracker()
-                logger.info(
-                    f"Actor { self.actor_id}: Product tracker initialized")
+                logger.info(f"Actor {self.actor_id}: Product tracker initialized")
             except Exception as e:
-                logger.warning(
-                    f"Actor { self.actor_id}: Product tracker unavailable: {e}")
+                logger.warning(f"Actor {self.actor_id}: Product tracker unavailable: {e}")
 
     def _optimize_with_tensorrt(self, pipeline):
         """Apply TensorRT optimization to diffusion pipeline"""
@@ -1309,8 +1289,7 @@ class ModelActor:
                             ).images
                         break
                     except torch.cuda.OutOfMemoryError:
-                        logger.warning(
-                            f"OOM in inpainting, reducing batch size from {batch_size} to { batch_size // 2}")
+                        logger.warning(f"OOM in inpainting, reducing batch size from {batch_size} to {batch_size // 2}")
                         batch_size //= 2
                         torch.cuda.empty_cache()
                         if batch_size == 0:
@@ -1470,8 +1449,7 @@ class ModelActor:
                     stylized_frames.extend(results)
                     break
                 except torch.cuda.OutOfMemoryError:
-                    logger.warning(
-                        f"OOM in style transfer, reducing batch from {current_batch_size} to { current_batch_size // 2}")
+                    logger.warning(f"OOM in style transfer, reducing batch from {current_batch_size} to {current_batch_size // 2}")
                     current_batch_size //= 2
                     torch.cuda.empty_cache()
                     if current_batch_size == 0:
@@ -1791,8 +1769,7 @@ class ModelActor:
                 # Reduce batch size
                 self.current_batch_size = max(
                     self.min_batch_size, self.current_batch_size // 2)
-                logger.warning(
-                    f"High memory usage ({ usage_ratio:.1%}), reducing batch size to { self.current_batch_size}")
+                logger.warning(f"High memory usage ({ usage_ratio:.1%}), reducing batch size to {self.current_batch_size}")
                 # Force memory cleanup
                 torch.cuda.empty_cache()
             elif usage_ratio < 0.5 and self.current_batch_size < PROCESSING_SETTINGS['frame_batch_size']:
@@ -1800,7 +1777,7 @@ class ModelActor:
                 self.current_batch_size = min(
                     PROCESSING_SETTINGS['frame_batch_size'],
                     self.current_batch_size * 2)
-                logger.info(f"Low memory usage ({usage_ratio:.1%}), increasing batch size to { self.current_batch_size}")
+                logger.info(f"Low memory usage ({usage_ratio:.1%}), increasing batch size to {self.current_batch_size}")
 
             return self.current_batch_size
         except Exception as e:
@@ -2011,8 +1988,7 @@ Weights: glow(0.4), brighten(0.3), fomo(0.3). Only return the number. ASSISTANT:
 
                 # Apply VIREX-9000 first-frame optimization
                 if frame_count == 0 and not first_frame_optimized:
-                    logger.info(
-                        f"Applying VIREX-9000 first-frame optimization for variant {variant_id}")
+                    logger.info(f"Applying VIREX-9000 first-frame optimization for variant {variant_id}")
                     frame_np = first_frame_optimizer.optimize_first_frame(
                         frame_np, PRODUCT_TYPE)
                     first_frame_optimized = True
@@ -2053,8 +2029,7 @@ Weights: glow(0.4), brighten(0.3), fomo(0.3). Only return the number. ASSISTANT:
 
             # Run product tracking analysis if available
             if self.product_tracker and frames_for_tracking:
-                logger.info(
-                    f"Running product tracking analysis for variant {variant_id}")
+                logger.info(f"Running product tracking analysis for variant {variant_id}")
                 product_tracking_data = self.product_tracker.track_product_in_frames(
                     frames_for_tracking, PRODUCT_TYPE)
 
@@ -2064,8 +2039,7 @@ Weights: glow(0.4), brighten(0.3), fomo(0.3). Only return the number. ASSISTANT:
                         # Find corresponding frame index in processed_frames
                         frame_idx = i * 5  # Since we sampled every 5th frame
                         if frame_idx < len(processed_frames):
-                            logger.info(
-                                f"Adjusting frame {frame_idx} for optimal product coverage (current: { tracking_info['coverage']:.1f}%)")
+                            logger.info(f"Adjusting frame {frame_idx} for optimal product coverage (current: {tracking_info['coverage']:.1f}%)")
                             processed_frames[frame_idx] = self.product_tracker.adjust_frame_for_coverage(
                                 processed_frames[frame_idx], tracking_info)
 
@@ -2092,8 +2066,7 @@ Weights: glow(0.4), brighten(0.3), fomo(0.3). Only return the number. ASSISTANT:
                     PROCESSING_SETTINGS['output_directory'],
                     f"heatmap_variant_{variant_id}.png")
                 cv2.imwrite(heatmap_path, heatmap)
-                logger.info(
-                    f"Saved product visibility heatmap to {heatmap_path}")
+                logger.info(f"Saved product visibility heatmap to {heatmap_path}")
 
             # Create temporary video
             temp_path = tempfile.NamedTemporaryFile(
@@ -2164,8 +2137,7 @@ def concurrent_download_videos(urls: List[str]) -> List[str]:
     def download_single(session, url, idx):
         for attempt in range(3):  # 3 retry attempts
             try:
-                logger.info(
-                    f"Downloading video {idx}: {url} (attempt { attempt + 1}/3)")
+                logger.info(f"Downloading video {idx}: {url} (attempt {attempt + 1}/3)")
                 with session.get(url, timeout=aiohttp.ClientTimeout(total=300)) as response:
                     if response.status != 200:
                         raise aiohttp.ClientError(f"HTTP {response.status}")
@@ -2177,16 +2149,14 @@ def concurrent_download_videos(urls: List[str]) -> List[str]:
                     with open(temp_path, 'wb') as f:
                         f.write(content)
 
-                    logger.info(f"Downloaded video {idx} successfully")
+                    logger.info(f"Downloaded video {idx}successfully")
                     return (idx, temp_path)
             except Exception as e:
                 if attempt == 2:  # Last attempt
-                    logger.error(
-                        f"Failed to download video {idx} after 3 attempts: {e}")
+                    logger.error(f"Failed to download video {idx} after 3 attempts: {e}")
                     return (idx, None)
                 else:
-                    logger.warning(
-                        f"Download attempt { attempt + 1} failed for video {idx}: {e}, retrying...")
+                    logger.warning(f"Download attempt { attempt + 1} failed for video {idx}: {e}, retrying...")
                     time.sleep(2 ** attempt)  # Exponential backoff
 
     # Create session with connection pooling
@@ -2250,14 +2220,13 @@ def parallel_ffmpeg_processing(
                    output_path]
 
             run(cmd, stdout=PIPE, stderr=PIPE, text=True, check=True)
-            logger.info(f"Generated variant {variant_id} with {overlay_gen.overlay_variants[ variant_id % len( overlay_gen.overlay_variants)]['style']} overlay style")
+            logger.info(f"Generated variant {variant_id} with {overlay_gen.overlay_variants[ variant_id % len( overlay_gen.overlay_variants)]['style']}overlay style")
             return output_path
         except CalledProcessError as e:
             logger.error(f"FFmpeg error for variant {variant_id}: {e.stderr}")
             return None
         except Exception as e:
-            logger.error(
-                f"FFmpeg processing failed for variant {variant_id}: {e}")
+            logger.error(f"FFmpeg processing failed for variant {variant_id}: {e}")
             return None
 
     # Process in parallel using thread pool
@@ -2295,8 +2264,7 @@ class OptimizedVideoProcessor:
         logger.info("Facebook Ads Video Processor - Ultra-Optimized Edition")
         logger.info("=" * 60)
         logger.info(f"Videos: {len(VIDEO_URLS)}")
-        logger.info(
-            f"Variants per video: { PROCESSING_SETTINGS['variants_per_video']}")
+        logger.info(f"Variants per video: {PROCESSING_SETTINGS['variants_per_video']}")
         logger.info(f"Total outputs: {len(VIDEO_URLS) * PROCESSING_SETTINGS['variants_per_video']}")
         logger.info(f"GPU count: {CLUSTER_SETTINGS['gpu_count']}")
         logger.info("Optimizations enabled:")
@@ -2306,7 +2274,7 @@ class OptimizedVideoProcessor:
         logger.info("=" * 60)
 
         # Start downloads immediately (non-blocking)
-        logger.info(f"Starting download of {len(VIDEO_URLS)} videos...")
+        logger.info(f"Starting download of {len(VIDEO_URLS)}videos...")
         video_paths_future = concurrent_download_videos.remote(VIDEO_URLS)
 
         # Generate hooks while videos download (overlapping I/O)
@@ -2400,8 +2368,7 @@ class OptimizedVideoProcessor:
                 task_args.append((video_path, hook, variant_id))
                 variant_id += 1
 
-        logger.info(
-            f"Generated { len(task_args)} smart variants for A/B testing")
+        logger.info(f"Generated {len(task_args)}smart variants for A/B testing")
         return task_args
 
     def _generate_hooks(self) -> List[str]:
@@ -2456,11 +2423,9 @@ class OptimizedVideoProcessor:
                            for word in trigger_words):
                         validated_hooks.append(hook)
                     else:
-                        logger.warning(
-                            f"Hook lacks psychological triggers: {hook}")
+                        logger.warning(f"Hook lacks psychological triggers: {hook}")
                 else:
-                    logger.warning(
-                        f"Hook has {word_count} words (target 10-15): {hook}")
+                    logger.warning(f"Hook has {word_count} words (target 10-15): {hook}")
 
             # Log hook variety
             question_count = sum(1 for h in validated_hooks if '?' in h)
@@ -2487,8 +2452,7 @@ class OptimizedVideoProcessor:
         eta = (elapsed / completed) * \
             (total - completed) if completed > 0 else 0
 
-        logger.info(
-            f"Progress: {completed}/{total} ({progress:.1f}%) - ETA: {eta / 60:.1f} minutes")
+        logger.info(f"Progress: {completed}/{total} ({progress:.1f}%) - ETA: {eta / 60:.1f}minutes")
 
     def _save_results(self):
         """Save processing results"""
@@ -2520,18 +2484,16 @@ class OptimizedVideoProcessor:
         logger.info("\n" + "=" * 60)
         logger.info("PROCESSING COMPLETE!")
         logger.info("=" * 60)
-        logger.info(f"Total time: {total_time / 60:.1f} minutes ({ total_time:.1f} seconds)")
-        logger.info(f"Average per video: {total_time / len(VIDEO_URLS):.1f} seconds")
-        logger.info(
-            f"Videos per minute: {len(VIDEO_URLS) / (total_time / 60):.2f}")
+        logger.info(f"Total time: {total_time / 60:.1f} minutes ({total_time:.1f}seconds)")
+        logger.info(f"Average per video: {total_time / len(VIDEO_URLS):.1f}seconds")
+        logger.info(f"Videos per minute: {len(VIDEO_URLS) / (total_time / 60):.2f}")
         # Assuming 90 min baseline
         logger.info(f"Speedup vs baseline: {(90 * 60) / total_time:.1f}x")
 
         if self.results:
             logger.info("\nTop 10 Variants:")
             for i, variant in enumerate(self.results[:10]):
-                logger.info(
-                    f"{i + 1}. Variant {variant['variant_id']} - Score: {variant['score']:.3f} - {variant['hook'][:50]}...")
+                logger.info(f"{i + 1}. Variant {variant['variant_id']} - Score: {variant['score']:.3f} - {variant['hook'][:50]}...")
 
         # Print cache statistics if caching enabled
         if OPTIMIZATION_SETTINGS.get(
@@ -2543,10 +2505,8 @@ class OptimizedVideoProcessor:
             logger.info(f"  Cache misses: {cache_stats['misses']}")
             logger.info(f"  Hit rate: {cache_stats['hit_rate']:.1%}")
             logger.info(f"  Cached OCR results: {cache_stats['ocr_entries']}")
-            logger.info(
-                f"  Cached SigLIP scores: { cache_stats['siglip_entries']}")
-            logger.info(
-                f"  Cached style frames: { cache_stats['style_entries']}")
+            logger.info(f"  Cached SigLIP scores: {cache_stats['siglip_entries']}")
+            logger.info(f"  Cached style frames: {cache_stats['style_entries']}")
 
         logger.info("=" * 60)
 
@@ -2567,7 +2527,7 @@ def setup_autoscaling():
         min_nodes = CLUSTER_SETTINGS['auto_scaling']['min_nodes']
         max_nodes = CLUSTER_SETTINGS['auto_scaling']['max_nodes']
 
-        logger.info(f"Auto-scaling configured: {min_nodes}-{max_nodes} nodes")
+        logger.info(f"Auto-scaling configured: {min_nodes}-{max_nodes}nodes")
 
 
 def print_cluster_metrics():
@@ -2579,9 +2539,8 @@ def print_cluster_metrics():
         logger.info("\nCluster Metrics:")
         logger.info(f"  Active Nodes: {len([n for n in nodes if n['Alive']])}")
         logger.info(f"  Total GPUs: {int(resources.get('GPU', 0))}")
-        logger.info(
-            f"  Available GPUs: {int(ray.available_resources().get('GPU', 0))}")
-        logger.info(f"  Memory Usage: {ray.cluster_resources().get( 'memory', 0) / 1e9:.1f} GB")
+        logger.info(f"  Available GPUs: {int(ray.available_resources().get('GPU', 0))}")
+        logger.info(f"  Memory Usage: {ray.cluster_resources().get( 'memory', 0) / 1e9:.1f}GB")
 
     except Exception as e:
         logger.error(f"Could not get cluster metrics: {e}")
