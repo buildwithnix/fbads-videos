@@ -2380,9 +2380,9 @@ class OptimizedVideoProcessor:
                     "XAI API key is required for generating marketing hooks. Please set XAI_API_KEY environment variable.")
 
             llm = ChatOpenAI(
-                model="grok-4",
+                model="grok-beta",
                 api_key=API_KEYS['xai_api_key'],
-                base_url="https://api.x.ai/v1/chat/completions",
+                base_url="https://api.x.ai/v1",
                 temperature=0.7,
             )
 
