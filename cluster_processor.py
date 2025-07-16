@@ -1003,9 +1003,7 @@ class ModelActor:
         try:
             if torch.cuda.is_available():
                 self.device = torch.device(
-                    f"cuda:{
-                        actor_id %
-                        torch.cuda.device_count()}")
+                    f"cuda:{actor_id % torch.cuda.device_count()}")
                 torch.cuda.set_device(self.device)
             else:
                 raise RuntimeError("CUDA not available")
