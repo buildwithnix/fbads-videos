@@ -1,0 +1,50 @@
+# VIREX-9000 Dependencies
+# Core
+torch>=2.0.0
+torchvision
+torchaudio
+numpy
+scipy
+Pillow
+opencv-python-headless
+opencv-contrib-python
+scikit-image
+psutil
+
+# Video Processing
+av==13.1.0
+ffmpeg-python
+scenedetect
+
+# AI/ML
+diffusers==0.34.0
+transformers==4.53.0
+accelerate
+safetensors
+huggingface-hub
+xformers
+
+# OCR
+paddlepaddle
+paddleocr==3.1.0
+
+# Distributed Processing
+ray[default]==2.46.0
+
+# APIs and Tools
+aiohttp==3.12.14
+langchain
+langchain-openai==0.3.28
+langgraph
+
+# Quantum
+pennylane==0.41.1
+pennylane-lightning
+
+# Utilities
+colorlog
+bitsandbytes==0.46.1
+
+# SAM2 Dependencies
+supervision>=0.25.0
+# segment-anything-2  # Install from GitHub if needed
