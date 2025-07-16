@@ -236,8 +236,7 @@ class NeuropsychologyPromptEngine:
     def __init__(self):
         self.prompt_categories = {
             "fomo_trigger": 0.25,      # Scarcity and urgency
-            "social_proof": 0.20,      # Authority and testimonials
-            "pattern_interrupt": 0.20,  # Attention grabbing
+            "social_proof": 0.20,      # Authority and testimonials "pattern_interrupt": 0.20,  # Attention grabbing
             "emotion_hook": 0.15,      # Emotional resonance
             "visual_appeal": 0.10,     # Aesthetic quality
             "trend_alignment": 0.10    # Current viral trends
@@ -1049,8 +1048,7 @@ class ModelActor:
 
         # Load FLUX Fill Pipeline for product-preserving enhancement
         logger.info(
-            f"Actor {
-                self.actor_id}: Loading FLUX Fill pipeline for image-to-image enhancement...")
+            f"Actor { self.actor_id}: Loading FLUX Fill pipeline for image-to-image enhancement...")
 
         # Determine which FLUX model to use
         use_schnell = OPTIMIZATION_SETTINGS.get('use_flux_schnell', False)
@@ -1059,18 +1057,15 @@ class ModelActor:
         if use_kontext:
             model_id = "black-forest-labs/FLUX.1-Kontext-dev"
             logger.info(
-                f"Actor {
-                    self.actor_id}: Using FLUX.1 Kontext for context-aware enhancement (VIREX-9000 mode)")
+                f"Actor { self.actor_id}: Using FLUX.1 Kontext for context-aware enhancement (VIREX-9000 mode)")
         elif use_schnell:
             model_id = "black-forest-labs/FLUX.1-schnell"
             logger.info(
-                f"Actor {
-                    self.actor_id}: Using FLUX.1 Schnell for 4x faster processing")
+                f"Actor { self.actor_id}: Using FLUX.1 Schnell for 4x faster processing")
         else:
             model_id = "black-forest-labs/FLUX.1-Fill-dev"
             logger.info(
-                f"Actor {
-                    self.actor_id}: Using FLUX.1 Fill Dev for standard enhancement")
+                f"Actor { self.actor_id}: Using FLUX.1 Fill Dev for standard enhancement")
 
         try:
             self.enhancement_pipe = FluxFillPipeline.from_pretrained(
@@ -1084,8 +1079,7 @@ class ModelActor:
 
         # FLUX uses optimized schedulers for fast inference
         logger.info(
-            f"Actor {
-                self.actor_id}: FLUX uses optimized sampling for product preservation")
+            f"Actor { self.actor_id}: FLUX uses optimized sampling for product preservation")
 
         # Apply TensorRT optimization if available
         if OPTIMIZATION_SETTINGS['use_tensorrt'] and self.device.type == "cuda" and TENSORRT_AVAILABLE:
@@ -1105,13 +1099,11 @@ class ModelActor:
         try:
             self.enhancement_pipe.enable_xformers_memory_efficient_attention()
             logger.info(
-                f"Actor {
-                    self.actor_id}: Using xformers for attention optimization")
+                f"Actor { self.actor_id}: Using xformers for attention optimization")
         except Exception:
             self.enhancement_pipe.enable_attention_slicing()  # Fallback to attention slicing
             logger.info(
-                f"Actor {
-                    self.actor_id}: Using attention slicing (xformers not available)")
+                f"Actor { self.actor_id}: Using attention slicing (xformers not available)")
 
         self.enhancement_pipe.enable_vae_slicing()       # VAE slicing for large batches
 
@@ -1121,18 +1113,15 @@ class ModelActor:
                 self.enhancement_pipe.transformer = torch.compile(
                     self.enhancement_pipe.transformer)
                 logger.info(
-                    f"Actor {
-                        self.actor_id}: Applied torch.compile to FLUX transformer for ~20% speedup")
+                    f"Actor { self.actor_id}: Applied torch.compile to FLUX transformer for ~20% speedup")
             except Exception as e:
                 logger.warning(
-                    f"Actor {
-                        self.actor_id}: torch.compile failed: {e}")
+                    f"Actor { self.actor_id}: torch.compile failed: {e}")
 
         # Also load SVD for optional video generation effects
         if OPTIMIZATION_SETTINGS.get('use_svd_effects', False):
             logger.info(
-                f"Actor {
-                    self.actor_id}: Loading SVD for video effects...")
+                f"Actor { self.actor_id}: Loading SVD for video effects...")
             try:
                 self.svd_pipe = StableVideoDiffusionPipeline.from_pretrained(
                     "stabilityai/stable-video-diffusion-img2vid-xt",
@@ -1154,14 +1143,12 @@ class ModelActor:
         # FLUX Fill handles both enhancement and inpainting, no need for
         # separate pipeline
         logger.info(
-            f"Actor {
-                self.actor_id}: FLUX Fill pipeline handles both enhancement and inpainting")
+            f"Actor { self.actor_id}: FLUX Fill pipeline handles both enhancement and inpainting")
         self.inpaint_pipe = self.enhancement_pipe  # Use same pipeline for consistency
 
         # Load SigLIP with optimization - superior to CLIP for scene engagement
         logger.info(
-            f"Actor {
-                self.actor_id}: Loading SigLIP model (better than CLIP for viral content)...")
+            f"Actor { self.actor_id}: Loading SigLIP model (better than CLIP for viral content)...")
         self.siglip_model = AutoModel.from_pretrained(
             "google/siglip-large-patch16-384",
             torch_dtype=torch.bfloat16
@@ -1171,14 +1158,12 @@ class ModelActor:
 
         # Load Video scoring model with 8-bit quantization
         logger.info(
-            f"Actor {
-                self.actor_id}: Loading VideoLLaVA with 8-bit quantization...")
+            f"Actor { self.actor_id}: Loading VideoLLaVA with 8-bit quantization...")
         try:
             self.virality_model = VideoLlavaForConditionalGeneration.from_pretrained(
                 "LanguageBind/Video-LLaVA-7B-hf",
                 quantization_config=quantization_config,
-                torch_dtype=torch.bfloat16,
-                device_map="auto")
+                torch_dtype=torch.bfloat16, device_map="auto")
         except Exception as e:
             logger.error(f"Failed to load Video-LLaVA model: {e}")
             raise
@@ -1188,8 +1173,7 @@ class ModelActor:
         # Initialize OCR
         self.ocr_reader = paddleocr.PaddleOCR(
             use_angle_cls=True,
-            lang='en',
-            use_gpu=True if self.device.type == "cuda" else False,
+            lang='en', use_gpu=True if self.device.type == "cuda" else False,
             device=f'gpu:{
                 self.actor_id %
                 torch.cuda.device_count()}' if self.device.type == "cuda" else 'cpu')
@@ -1213,12 +1197,10 @@ class ModelActor:
             try:
                 self.product_tracker = ProductTracker()
                 logger.info(
-                    f"Actor {
-                        self.actor_id}: Product tracker initialized")
+                    f"Actor { self.actor_id}: Product tracker initialized")
             except Exception as e:
                 logger.warning(
-                    f"Actor {
-                        self.actor_id}: Product tracker unavailable: {e}")
+                    f"Actor { self.actor_id}: Product tracker unavailable: {e}")
 
     def _optimize_with_tensorrt(self, pipeline):
         """Apply TensorRT optimization to diffusion pipeline"""
@@ -1328,8 +1310,7 @@ class ModelActor:
                         break
                     except torch.cuda.OutOfMemoryError:
                         logger.warning(
-                            f"OOM in inpainting, reducing batch size from {batch_size} to {
-                                batch_size // 2}")
+                            f"OOM in inpainting, reducing batch size from {batch_size} to { batch_size // 2}")
                         batch_size //= 2
                         torch.cuda.empty_cache()
                         if batch_size == 0:
@@ -1490,8 +1471,7 @@ class ModelActor:
                     break
                 except torch.cuda.OutOfMemoryError:
                     logger.warning(
-                        f"OOM in style transfer, reducing batch from {current_batch_size} to {
-                            current_batch_size // 2}")
+                        f"OOM in style transfer, reducing batch from {current_batch_size} to { current_batch_size // 2}")
                     current_batch_size //= 2
                     torch.cuda.empty_cache()
                     if current_batch_size == 0:
@@ -1720,8 +1700,7 @@ class ModelActor:
         # In production, would use more sophisticated mapping
         prompt_categories = {
             0: "fomo_trigger",
-            1: "social_proof",
-            2: "pattern_interrupt",
+            1: "social_proof", 2: "pattern_interrupt",
             3: "emotion_hook",
             4: "visual_appeal",
             5: "trend_alignment",
@@ -1768,32 +1747,10 @@ class ModelActor:
             "radiant skin transformation with clinical lighting, vibrant golden hues",
             "K-beauty glass skin effect with natural warmth, brightening progression"]
 
-        base_prompt = f"""[ATTENTION HIJACK LAYER - Soap Mode]
-Enhance golden turmeric hues (+30% vibrancy), dewy kojic acid finish with subsurface scattering, rich lather textures; preserve exact soap geometry while boosting brightness/glow effects for radiant skin.
-Focus: {variant_focuses[variant_id % len(variant_focuses)]}
-
-[DOPAMINE TRIGGER LAYER]
-- Enhance specular highlights on soap surfaces (+40% intensity) for vibrant glow
-- Apply dewy finish with subsurface scattering for translucent skin effect
-- Golden hour lighting (3000K) for trust and warmth psychology
-- Micro-shimmer on lather bubbles simulating instant transformation
-
-[TRUST SIGNAL LAYER]
-- 100% preserve soap geometry and natural ingredient visuals (turmeric flecks, kojic clarity)
-- Enhance golden turmeric color saturation while maintaining authenticity
-- Apply rim lighting for glow aura effect around soap
-- Ensure smooth, even skin tone in application areas
-
-[VIRAL OPTIMIZATION]
-        - First-frame maximum contrast for thumb-stop effect
-        - Z-pattern visual flow from product to brightened skin
-        - High saturation (HSB >80%) for mobile OLED displays
-        - Gestalt incomplete-to-complete transformation narrative
-        """
+        base_prompt = f"""[ATTENTION HIJACK LAYER - Soap Mode] Enhance golden turmeric hues (+30% vibrancy), dewy kojic acid finish with subsurface scattering, rich lather textures; preserve exact soap geometry while boosting brightness/glow effects for radiant skin. Focus: {variant_focuses[variant_id % len(variant_focuses)]}  [DOPAMINE TRIGGER LAYER] - Enhance specular highlights on soap surfaces (+40% intensity) for vibrant glow - Apply dewy finish with subsurface scattering for translucent skin effect - Golden hour lighting (3000K) for trust and warmth psychology - Micro-shimmer on lather bubbles simulating instant transformation  [TRUST SIGNAL LAYER] - 100% preserve soap geometry and natural ingredient visuals (turmeric flecks, kojic clarity) - Enhance golden turmeric color saturation while maintaining authenticity - Apply rim lighting for glow aura effect around soap - Ensure smooth, even skin tone in application areas  [VIRAL OPTIMIZATION] - First-frame maximum contrast for thumb-stop effect - Z-pattern visual flow from product to brightened skin - High saturation (HSB >80%) for mobile OLED displays - Gestalt incomplete-to-complete transformation narrative """
 
         # Simplified version for processing
-        return f"Ultra-premium cosmetics photography: {base_prompt[:500]}... Focus: {variant_focuses[variant_id %
-                                                                                                     len(variant_focuses)]}"
+        return f"Ultra-premium cosmetics photography: {base_prompt[:500]}... Focus: {variant_focuses[variant_id % len(variant_focuses)]}"
 
     # ========================================================================
     # OPTIMIZATION 3: Quantum Circuit Caching
@@ -1835,9 +1792,7 @@ Focus: {variant_focuses[variant_id % len(variant_focuses)]}
                 self.current_batch_size = max(
                     self.min_batch_size, self.current_batch_size // 2)
                 logger.warning(
-                    f"High memory usage ({
-                        usage_ratio:.1%}), reducing batch size to {
-                        self.current_batch_size}")
+                    f"High memory usage ({ usage_ratio:.1%}), reducing batch size to { self.current_batch_size}")
                 # Force memory cleanup
                 torch.cuda.empty_cache()
             elif usage_ratio < 0.5 and self.current_batch_size < PROCESSING_SETTINGS['frame_batch_size']:
@@ -1845,10 +1800,7 @@ Focus: {variant_focuses[variant_id % len(variant_focuses)]}
                 self.current_batch_size = min(
                     PROCESSING_SETTINGS['frame_batch_size'],
                     self.current_batch_size * 2)
-                logger.info(
-                    f"Low memory usage ({
-                        usage_ratio:.1%}), increasing batch size to {
-                        self.current_batch_size}")
+                logger.info(f"Low memory usage ({usage_ratio:.1%}), increasing batch size to { self.current_batch_size}")
 
             return self.current_batch_size
         except Exception as e:
@@ -2113,8 +2065,7 @@ Weights: glow(0.4), brighten(0.3), fomo(0.3). Only return the number. ASSISTANT:
                         frame_idx = i * 5  # Since we sampled every 5th frame
                         if frame_idx < len(processed_frames):
                             logger.info(
-                                f"Adjusting frame {frame_idx} for optimal product coverage (current: {
-                                    tracking_info['coverage']:.1f}%)")
+                                f"Adjusting frame {frame_idx} for optimal product coverage (current: { tracking_info['coverage']:.1f}%)")
                             processed_frames[frame_idx] = self.product_tracker.adjust_frame_for_coverage(
                                 processed_frames[frame_idx], tracking_info)
 
@@ -2214,8 +2165,7 @@ def concurrent_download_videos(urls: List[str]) -> List[str]:
         for attempt in range(3):  # 3 retry attempts
             try:
                 logger.info(
-                    f"Downloading video {idx}: {url} (attempt {
-                        attempt + 1}/3)")
+                    f"Downloading video {idx}: {url} (attempt { attempt + 1}/3)")
                 with session.get(url, timeout=aiohttp.ClientTimeout(total=300)) as response:
                     if response.status != 200:
                         raise aiohttp.ClientError(f"HTTP {response.status}")
@@ -2236,9 +2186,7 @@ def concurrent_download_videos(urls: List[str]) -> List[str]:
                     return (idx, None)
                 else:
                     logger.warning(
-                        f"Download attempt {
-                            attempt +
-                            1} failed for video {idx}: {e}, retrying...")
+                        f"Download attempt { attempt + 1} failed for video {idx}: {e}, retrying...")
                     time.sleep(2 ** attempt)  # Exponential backoff
 
     # Create session with connection pooling
@@ -2302,11 +2250,7 @@ def parallel_ffmpeg_processing(
                    output_path]
 
             run(cmd, stdout=PIPE, stderr=PIPE, text=True, check=True)
-            logger.info(
-                f"Generated variant {variant_id} with {
-                    overlay_gen.overlay_variants[
-                        variant_id % len(
-                            overlay_gen.overlay_variants)]['style']} overlay style")
+            logger.info(f"Generated variant {variant_id} with {overlay_gen.overlay_variants[ variant_id % len( overlay_gen.overlay_variants)]['style']} overlay style")
             return output_path
         except CalledProcessError as e:
             logger.error(f"FFmpeg error for variant {variant_id}: {e.stderr}")
@@ -2352,12 +2296,8 @@ class OptimizedVideoProcessor:
         logger.info("=" * 60)
         logger.info(f"Videos: {len(VIDEO_URLS)}")
         logger.info(
-            f"Variants per video: {
-                PROCESSING_SETTINGS['variants_per_video']}")
-        logger.info(
-            f"Total outputs: {
-                len(VIDEO_URLS) *
-                PROCESSING_SETTINGS['variants_per_video']}")
+            f"Variants per video: { PROCESSING_SETTINGS['variants_per_video']}")
+        logger.info(f"Total outputs: {len(VIDEO_URLS) * PROCESSING_SETTINGS['variants_per_video']}")
         logger.info(f"GPU count: {CLUSTER_SETTINGS['gpu_count']}")
         logger.info("Optimizations enabled:")
         for key, value in OPTIMIZATION_SETTINGS.items():
@@ -2461,8 +2401,7 @@ class OptimizedVideoProcessor:
                 variant_id += 1
 
         logger.info(
-            f"Generated {
-                len(task_args)} smart variants for A/B testing")
+            f"Generated { len(task_args)} smart variants for A/B testing")
         return task_args
 
     def _generate_hooks(self) -> List[str]:
@@ -2480,21 +2419,7 @@ class OptimizedVideoProcessor:
                 temperature=0.7,
             )
 
-            prompt = f"""Generate exactly {
-                PROCESSING_SETTINGS['variants_per_video'] * 2} ultra-viral marketing hooks for trending turmeric & kojic acid soap ads on Facebook in 2025, optimized for the first frame to stop scrolls in 1-3 seconds.
-Each hook must be 10-15 words max, super short, punchy, and action-oriented with a pattern interrupt (e.g., bold question, shocking stat, urgent command, or hero mini-story).
-IMPORTANT: The offer is FREE SOAP (just pay small shipping fee) – emphasize 'FREE' as the no-brainer value proposition, anchoring high worth (e.g., '$49 value FREE') to trigger reciprocity and impulse claims.
-Focus on product benefits: natural turmeric for golden glow and anti-inflammatory soothing, kojic acid for brightening and fading spots/hyperpigmentation, resulting in radiant, even-toned, dewy skin.
-Incorporate these neuropsychological triggers in every hook:
-- FOMO and scarcity (e.g., 'Last 24 hours – FREE glow bottles vanishing!'),
-- Social proof and authority (e.g., 'Dermatologists obsessed – 50K+ claimed FREE brightening soap'),
-- Loss aversion and anchoring (e.g., 'Don't lose your $49 glow – FREE soap, shipping only'),
-- Emotional urgency and dopamine words (e.g., 'FREE instant brightening unlocks radiant confidence rush'),
-- Cognitive biases like reciprocity (emphasize 'FREE' gift value exchange) and confirmation (affirm pain like 'Tired of dull, uneven skin?').
-Evoke color psychology subtly (e.g., words like 'golden glow', 'radiant dewy' for warm, trusting, energetic vibes).
-Draw from 2025 trends: AI-personalized clean beauty (e.g., 'AI-matched FREE glow formula'), K-beauty dewy influences, interactive calls (e.g., 'Comment GLOW for your FREE bottle!'), and influencer-style authenticity for viral shares.
-Ensure variety for A/B testing: 1/3 questions (curiosity bias), 1/3 stats/testimonials (social proof), 1/3 bold claims/stories (emotional narrative). Make them sensory-vivid with power words (e.g., 'explode', 'unlock', 'transform') for dopamine hits.
-Output ONLY as JSON with key 'hooks' containing a list of strings – no extra text."""
+            prompt = f"""Generate exactly { PROCESSING_SETTINGS['variants_per_video'] * 2} ultra-viral marketing hooks for trending turmeric & kojic acid soap ads on Facebook in 2025, optimized for the first frame to stop scrolls in 1-3 seconds. Each hook must be 10-15 words max, super short, punchy, and action-oriented with a pattern interrupt (e.g., bold question, shocking stat, urgent command, or hero mini-story). IMPORTANT: The offer is FREE SOAP (just pay small shipping fee) – emphasize 'FREE' as the no-brainer value proposition, anchoring high worth (e.g., '$49 value FREE') to trigger reciprocity and impulse claims. Focus on product benefits: natural turmeric for golden glow and anti-inflammatory soothing, kojic acid for brightening and fading spots/hyperpigmentation, resulting in radiant, even-toned, dewy skin. Incorporate these neuropsychological triggers in every hook: - FOMO and scarcity (e.g., 'Last 24 hours – FREE glow bottles vanishing!'), - Social proof and authority (e.g., 'Dermatologists obsessed – 50K+ claimed FREE brightening soap'), - Loss aversion and anchoring (e.g., 'Don't lose your $49 glow – FREE soap, shipping only'), - Emotional urgency and dopamine words (e.g., 'FREE instant brightening unlocks radiant confidence rush'), - Cognitive biases like reciprocity (emphasize 'FREE' gift value exchange) and confirmation (affirm pain like 'Tired of dull, uneven skin?'). Evoke color psychology subtly (e.g., words like 'golden glow', 'radiant dewy' for warm, trusting, energetic vibes). Draw from 2025 trends: AI-personalized clean beauty (e.g., 'AI-matched FREE glow formula'), K-beauty dewy influences, interactive calls (e.g., 'Comment GLOW for your FREE bottle!'), and influencer-style authenticity for viral shares. Ensure variety for A/B testing: 1/3 questions (curiosity bias), 1/3 stats/testimonials (social proof), 1/3 bold claims/stories (emotional narrative). Make them sensory-vivid with power words (e.g., 'explode', 'unlock', 'transform') for dopamine hits. Output ONLY as JSON with key 'hooks' containing a list of strings – no extra text."""
 
             response = llm.ainvoke(prompt)
             generated = json.loads(response.content)['hooks']
@@ -2542,11 +2467,7 @@ Output ONLY as JSON with key 'hooks' containing a list of strings – no extra t
             stat_count = sum(
                 1 for h in validated_hooks if any(
                     c.isdigit() for c in h))
-            logger.info(
-                f"Generated hooks - Questions: {question_count}, Stats: {stat_count}, Claims: {
-                    len(validated_hooks) -
-                    question_count -
-                    stat_count}")
+            logger.info(f"Generated hooks - Questions: {question_count}, Stats: {stat_count}, Claims: {len(validated_hooks) - question_count - stat_count}")
 
             # Return only validated hooks from Grok API
             return validated_hooks[:PROCESSING_SETTINGS['variants_per_video'] * 2]
@@ -2599,15 +2520,8 @@ Output ONLY as JSON with key 'hooks' containing a list of strings – no extra t
         logger.info("\n" + "=" * 60)
         logger.info("PROCESSING COMPLETE!")
         logger.info("=" * 60)
-        logger.info(
-            f"Total time: {
-                total_time /
-                60:.1f} minutes ({
-                total_time:.1f} seconds)")
-        logger.info(
-            f"Average per video: {
-                total_time /
-                len(VIDEO_URLS):.1f} seconds")
+        logger.info(f"Total time: {total_time / 60:.1f} minutes ({ total_time:.1f} seconds)")
+        logger.info(f"Average per video: {total_time / len(VIDEO_URLS):.1f} seconds")
         logger.info(
             f"Videos per minute: {len(VIDEO_URLS) / (total_time / 60):.2f}")
         # Assuming 90 min baseline
@@ -2630,11 +2544,9 @@ Output ONLY as JSON with key 'hooks' containing a list of strings – no extra t
             logger.info(f"  Hit rate: {cache_stats['hit_rate']:.1%}")
             logger.info(f"  Cached OCR results: {cache_stats['ocr_entries']}")
             logger.info(
-                f"  Cached SigLIP scores: {
-                    cache_stats['siglip_entries']}")
+                f"  Cached SigLIP scores: { cache_stats['siglip_entries']}")
             logger.info(
-                f"  Cached style frames: {
-                    cache_stats['style_entries']}")
+                f"  Cached style frames: { cache_stats['style_entries']}")
 
         logger.info("=" * 60)
 
@@ -2669,11 +2581,7 @@ def print_cluster_metrics():
         logger.info(f"  Total GPUs: {int(resources.get('GPU', 0))}")
         logger.info(
             f"  Available GPUs: {int(ray.available_resources().get('GPU', 0))}")
-        logger.info(
-            f"  Memory Usage: {
-                ray.cluster_resources().get(
-                    'memory',
-                    0) / 1e9:.1f} GB")
+        logger.info(f"  Memory Usage: {ray.cluster_resources().get( 'memory', 0) / 1e9:.1f} GB")
 
     except Exception as e:
         logger.error(f"Could not get cluster metrics: {e}")
