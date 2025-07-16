@@ -1,173 +1,55 @@
 {
   "video_urls": [
-    "https://555tze8lxjngbgwh.public.blob.verbatim-storage.com/soap-ads/479713551_515066061625511_868480252418003731_n.mp4",
-    "https://555tze8lxjngbgwh.public.blob.verbatim-storage.com/soap-ads/479719342_1784726572373415_8921934279071603968_n.mp4"
+    "https://555tze8lxjngbgwh.public.blob.verbatim-storage.com/soap-ads/479713551_515066061625511_868480252418003731_n.mp4"
   ],
-  
   "processing_settings": {
-    "variants_per_video": 2,
+    "variants_per_video": 1,
     "output_directory": "./results/",
     "quality_preset": "optimized",
     "video_duration_seconds": 15,
     "batch_size": 8,
     "frame_batch_size": 8,
-    "concurrent_downloads": 32
+    "concurrent_downloads": 32,
+    "max_videos_per_batch": 32,
+    "video_quality_crf": 23,
+    "save_intermediate_files": false,
+    "keyframe_interval": 10,
+    "scene_threshold": 30.0,
+    "temporal_window_size": 3,
+    "noise_intensity": 0.015,
+    "min_ssim": 0.85
   },
-  
   "cluster_settings": {
-    "gpu_type": "H100",
-    "gpu_count": 32,
-    "gpus_per_node": 8,
-    "node_count": 4,
-    "use_spot_instances": true,
-    "spot_bid_price": 2.5,
-    "auto_scaling": {
-      "enabled": true,
-      "min_nodes": 2,
-      "max_nodes": 4,
-      "scale_up_threshold": 0.8,
-      "scale_down_threshold": 0.3
-    }
+    "gpu_count": 1
   },
-  
   "optimization_settings": {
-    "use_actor_pools": true,
-    "actors_per_gpu": 1,
-    "use_tensorrt": true,
-    "use_feature_slicing": true,
-    "cache_quantum_circuits": true,
-    "operator_grouping": true,
-    "pipeline_execution": true,
-    "batch_frame_processing": true,
-    "use_quantum": true,
     "use_caching": true,
-    "use_flash_attention": true,
-    "use_fast_samplers": true,
-    "use_adaptive_batching": true,
-    "use_memory_monitoring": true,
-    "cache_ttl_seconds": 3600,
-    "memory_threshold": 0.85,
-    "use_flux_schnell": false,
-    "flux_model": "fill-dev",
-    "preserve_product_strength": 0.6,
-    "scene_analyzer": "siglip-large-patch16-384",
-    "siglip_batch_size": 32,
-    "viral_engagement_threshold": 0.75,
     "use_neuropsychology_prompts": true,
     "first_frame_boost": 1.5,
-    "product_type_hint": "turmeric_kojic_soap",
-    "use_flux_kontext": true,
-    "cosmetics_mode": true,
-    "enable_virex_matrix": true,
-    "target_viral_score": 0.92
+    "product_type_hint": "turmeric_kojic_soap"
   },
-  
-  "api_keys": {
-    "xai_api_key": "",
-    "runpod_api_key": ""
+  "models": {
+    "flux_model_id": "black-forest-labs/FLUX.1-kontext-dev",
+    "clip_model_id": "openai/clip-vit-large-patch14-336",
+    "ocr_model_id": "PaddlePaddle/PaddleOCR",
+    "gemma_model": "google/gemma-2-27b-it",
+    "vsr_model_id": "princeton-nlp/Diff-Mamba-9B",
+    "video_perturb_model_id": "Tencent-Hunyuan/HunyuanVideo"
   },
-  
   "quality_presets": {
-    "high": {
-      "svd_inference_steps": 28,
-      "inpaint_inference_steps": 25,
-      "video_crf": 23,
-      "use_8bit_quantization": false
-    },
     "optimized": {
       "svd_inference_steps": 28,
       "inpaint_inference_steps": 25,
-      "video_crf": 23,
-      "use_8bit_quantization": true
-    },
-    "fast": {
-      "svd_inference_steps": 15,
-      "inpaint_inference_steps": 10,
-      "video_crf": 25,
       "use_8bit_quantization": true
     }
   },
-  
-  "virex_settings": {
-    "glow_detection_threshold": 0.7,
-    "dewy_finish_intensity": 0.4,
-    "first_frame_multiplier": 2.0,
-    "temporal_smoothing": 0.95,
-    "overlay_pulse_frequency": 2.0,
-    "color_vibrancy_boost": 1.3,
-    "contrast_enhancement": 1.2,
-    "mobile_optimization": true
-  },
-  
   "product_specific": {
-    "type": "turmeric_kojic_soap",
-    "key_benefits": ["glowing", "brightening", "hyperpigmentation_fade"],
-    "color_palette": ["golden", "amber", "cream"],
-    "texture_emphasis": ["smooth", "dewy", "radiant"],
-    "target_concerns": ["dull_skin", "uneven_tone", "dark_spots"]
+    "type": "turmeric_kojic_soap"
   },
-  
-  "dynamic_profiles": {
-    "turmeric_kojic_soap": {
-      "color_grading": "golden_vibrant",
-      "motion": "dewy_smooth",
-      "texture": "brightening_enhanced",
-      "glow_threshold": 0.85,
-      "scene_priorities": {
-        "lathering": 0.3,
-        "application": 0.25,
-        "transitions": 0.25,
-        "closeups": 0.2
-      },
-      "enhancement_focus": ["golden_hues", "dewy_finish", "smooth_texture"],
-      "viral_elements": ["before_after", "glow_reveal", "texture_transform"],
-      "track_product": true,
-      "coverage_target": "40-60%",
-      "tracking_method": "sam2"
-    },
-    "default": {
-      "color_grading": "standard",
-      "motion": "normal",
-      "texture": "standard",
-      "glow_threshold": 0.7,
-      "scene_priorities": {
-        "product": 0.4,
-        "demonstration": 0.3,
-        "results": 0.3
-      }
-    }
-  },
-  
-  "scoring_settings": {
-    "model": "SigLIP-v2",
-    "threshold": 0.85,
-    "weights": {
-      "glow": 0.4,
-      "brighten": 0.3,
-      "fomo": 0.3
-    }
-  },
-  
-  "overlay_system": {
-    "enable_animations": true,
-    "price_drop_duration": 500,
-    "trust_badges": ["dermatologist_approved", "natural_ingredients"],
-    "stock_counter": true,
-    "urgency_timer": true,
-    "pulse_frequency": 3
-  },
-  
   "first_frame_optimizer": {
     "contrast_boost": 1.5,
     "composition": "golden_ratio",
     "interrupt_elements": ["glow_aura", "urgency_angle"],
     "golden_hour_temp": 3000
-  },
-  
-  "variant_generator": {
-    "first_frame_comps": ["center_glow", "angled_brighten", "rule_thirds"],
-    "hook_positions": ["top", "middle", "bottom"],
-    "hook_types": ["question", "stat", "claim"],
-    "urgency_elements": ["countdown_timer", "stock_counter", "limited_offer"]
   }
 }
