@@ -27,7 +27,7 @@ from PIL import Image
 import hashlib
 
 # AI/ML imports
-from diffusers import StableVideoDiffusionPipeline, FluxFillPipeline
+from diffusers import StableVideoDiffusionPipeline, FluxPipeline
 from transformers import AutoModel, AutoProcessor, VideoLlavaProcessor, VideoLlavaForConditionalGeneration
 try:
     from transformers import BitsAndBytesConfig
@@ -1047,36 +1047,20 @@ class ModelActor:
         # Load FLUX Fill Pipeline for product-preserving enhancement
         logger.info(f"Actor {self.actor_id}: Loading FLUX Fill pipeline for image-to-image enhancement...")
 
-        # Determine which FLUX model to use
-        use_schnell = OPTIMIZATION_SETTINGS.get('use_flux_schnell', False)
-        use_kontext = OPTIMIZATION_SETTINGS.get('use_flux_kontext', True)
-
-        if use_kontext:
-            model_id = "black-forest-labs/FLUX.1-Kontext-dev"
-            logger.info(f"Actor {self.actor_id}: Using FLUX.1 Kontext for context-aware enhancement (VIREX-9000 mode)")
-        elif use_schnell:
-            model_id = "black-forest-labs/FLUX.1-schnell"
-            logger.info(f"Actor {self.actor_id}: Using FLUX.1 Schnell for 4x faster processing")
-        else:
-            model_id = "black-forest-labs/FLUX.1-Fill-dev"
-            logger.info(f"Actor {self.actor_id}: Using FLUX.1 Fill Dev for standard enhancement")
-
-        try:
-            # Try to load the model, fallback to SDXL if authentication fails
-            self.enhancement_pipe = FluxFillPipeline.from_pretrained(
-                model_id,
-                torch_dtype=torch.bfloat16,
-                use_safetensors=True
-            )
-        except Exception as e:
-            logger.warning(f"Failed to load FLUX model: {e}. Falling back to SDXL...")
-            # Use SDXL as fallback which doesn't require authentication
-            from diffusers import StableDiffusionXLPipeline
-            self.enhancement_pipe = StableDiffusionXLPipeline.from_pretrained(
-                "stabilityai/stable-diffusion-xl-base-1.0",
-                torch_dtype=torch.bfloat16,
-                use_safetensors=True
-            )
+        # ONLY use FLUX.1 Schnell - State-of-the-art July 2025
+        # NO FALLBACKS - we use only the best model available
+        model_id = "black-forest-labs/FLUX.1-schnell"
+        logger.info(f"Actor {self.actor_id}: Loading FLUX.1 Schnell - State-of-the-art model (July 2025)")
+        
+        # Load FLUX with latest 2025 optimizations
+        self.enhancement_pipe = FluxPipeline.from_pretrained(
+            model_id,
+            torch_dtype=torch.bfloat16,
+            use_safetensors=True,
+            # Maximum performance optimizations
+            variant="fp16" if self.device.type == "cuda" else None,
+            low_cpu_mem_usage=True
+        )
 
         # FLUX uses optimized schedulers for fast inference
         logger.info(f"Actor {self.actor_id}: FLUX uses optimized sampling for product preservation")
@@ -2140,35 +2124,46 @@ Weights: glow(0.4), brighten(0.3), fomo(0.3). Only return the number. ASSISTANT:
 
 @ray.remote
 def concurrent_download_videos(urls: List[str]) -> List[str]:
-    """Download multiple videos concurrently with retry logic"""
-    import requests
+    """Download multiple videos concurrently using async for TRUE parallelism"""
+    import asyncio
+    import aiohttp
     import tempfile
-    import time
     
-    downloaded_paths = []
-    
-    for idx, url in enumerate(urls):
+    async def download_single_video(session: aiohttp.ClientSession, idx: int, url: str) -> str:
+        """Download a single video with retry logic"""
         for attempt in range(3):  # 3 retry attempts
             try:
                 logger.info(f"Downloading video {idx}: {url} (attempt {attempt + 1}/3)")
-                response = requests.get(url, timeout=300)
-                response.raise_for_status()
-                
-                temp_path = tempfile.NamedTemporaryFile(suffix='.mp4', delete=False).name
-                with open(temp_path, 'wb') as f:
-                    f.write(response.content)
-                
-                logger.info(f"Downloaded video {idx} successfully to {temp_path}")
-                downloaded_paths.append(temp_path)
-                break
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=300)) as response:
+                    response.raise_for_status()
+                    content = await response.read()
+                    
+                    temp_path = tempfile.NamedTemporaryFile(suffix='.mp4', delete=False).name
+                    with open(temp_path, 'wb') as f:
+                        f.write(content)
+                    
+                    logger.info(f"Downloaded video {idx} successfully to {temp_path}")
+                    return temp_path
             except Exception as e:
                 if attempt == 2:  # Last attempt
                     logger.error(f"Failed to download video {idx} after 3 attempts: {e}")
+                    raise
                 else:
                     logger.warning(f"Download attempt {attempt + 1} failed for video {idx}: {e}, retrying...")
-                    time.sleep(2 ** attempt)  # Exponential backoff
+                    await asyncio.sleep(2 ** attempt)  # Exponential backoff
     
-    return downloaded_paths
+    async def download_all():
+        """Download all videos in PARALLEL - not sequential"""
+        async with aiohttp.ClientSession() as session:
+            tasks = [download_single_video(session, idx, url) for idx, url in enumerate(urls)]
+            downloaded_paths = await asyncio.gather(*tasks, return_exceptions=True)
+            
+            # Filter out any failed downloads
+            valid_paths = [path for path in downloaded_paths if isinstance(path, str)]
+            return valid_paths
+    
+    # Run async function in Ray context
+    return asyncio.run(download_all())
 
 
 @ray.remote
