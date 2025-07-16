@@ -2379,8 +2379,9 @@ class OptimizedVideoProcessor:
                 raise ValueError(
                     "XAI API key is required for generating marketing hooks. Please set XAI_API_KEY environment variable.")
 
+            # X.AI's API is OpenAI-compatible, so we use ChatOpenAI with X.AI's base URL
             llm = ChatOpenAI(
-                model="grok-beta",
+                model="grok-4-0709",  # Latest Grok 4 model
                 api_key=API_KEYS['xai_api_key'],
                 base_url="https://api.x.ai/v1",
                 temperature=0.7,
